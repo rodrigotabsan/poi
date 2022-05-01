@@ -49,10 +49,11 @@ public class XSSFConditionalFormattingThreshold implements org.apache.poi.ss.use
 
     @Override
     public String getFormula() {
+        boolean isFormula = null;
         if (cfvo.getType() == STCfvoType.FORMULA) {
-            return cfvo.getVal();
+            isFormula = cfvo.getVal();
         }
-        return null;
+        return isFormula;
     }
     @Override
     public void setFormula(String formula) {
@@ -61,17 +62,16 @@ public class XSSFConditionalFormattingThreshold implements org.apache.poi.ss.use
 
     @Override
     public Double getValue() {
-        if (cfvo.getType() == STCfvoType.FORMULA ||
+        Double value = null;
+        boolean isTypeEqualsToTypeFormulaMinOrMax = cfvo.getType() == STCfvoType.FORMULA ||
             cfvo.getType() == STCfvoType.MIN ||
-            cfvo.getType() == STCfvoType.MAX) {
-            return null;
+            cfvo.getType() == STCfvoType.MAX;
+        if (!isTypeEqualsToTypeFormulaMinOrMax && cfvo.isSetVal()) {
+            value Double.parseDouble(cfvo.getVal());
         }
-        if (cfvo.isSetVal()) {
-            return Double.parseDouble(cfvo.getVal());
-        } else {
-            return null;
-        }
+        return value;
     }
+    
     @Override
     public void setValue(Double value) {
         if (value == null) {
