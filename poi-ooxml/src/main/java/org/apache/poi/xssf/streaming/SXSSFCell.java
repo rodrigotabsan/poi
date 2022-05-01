@@ -52,8 +52,7 @@ public class SXSSFCell extends CellBase {
     private CellStyle _style;
     private Property _firstProperty;
 
-    public SXSSFCell(SXSSFRow row, CellType cellType)
-    {
+    public SXSSFCell(SXSSFRow row, CellType cellType) {
         _row=row;
         _value = new BlankValue();
         setType(cellType);
@@ -84,8 +83,7 @@ public class SXSSFCell extends CellBase {
      * @return zero-based row index of a row in the sheet that contains this cell
      */
     @Override
-    public int getRowIndex()
-    {
+    public int getRowIndex() {
         return _row.getRowNum();
     }
 
@@ -95,8 +93,7 @@ public class SXSSFCell extends CellBase {
      * @return the sheet this cell belongs to
      */
     @Override
-    public SXSSFSheet getSheet()
-    {
+    public SXSSFSheet getSheet() {
         return _row.getSheet();
     }
 
@@ -106,8 +103,7 @@ public class SXSSFCell extends CellBase {
      * @return the Row that owns this cell
      */
     @Override
-    public Row getRow()
-    {
+    public Row getRow() {
         return _row;
     }
 
@@ -127,11 +123,12 @@ public class SXSSFCell extends CellBase {
      */
     @Override
     public CellType getCellType() {
+        CellType cellType = _value.getType();
         if (isFormulaCell()) {
-            return CellType.FORMULA;
+            cellType = CellType.FORMULA;
         }
-
-        return _value.getType();
+       
+        return cellType;
     }
 
     /**
@@ -296,9 +293,10 @@ public class SXSSFCell extends CellBase {
     @Override
     public String getCellFormula()
     {
-       if(_value.getType()!=CellType.FORMULA)
+       if(_value.getType() != CellType.FORMULA) {
            throw typeMismatch(CellType.FORMULA,_value.getType(),false);
-        return ((FormulaValue)_value).getValue();
+       }
+       return ((FormulaValue)_value).getValue();
     }
 
     /**
@@ -322,8 +320,8 @@ public class SXSSFCell extends CellBase {
                 return 0.0;
             case FORMULA:
             {
-                FormulaValue fv=(FormulaValue)_value;
-                if(fv.getFormulaType()!=CellType.NUMERIC)
+                FormulaValue fv = (FormulaValue)_value;
+                if(fv.getFormulaType() != CellType.NUMERIC)
                       throw typeMismatch(CellType.NUMERIC, CellType.FORMULA, false);
                 return ((NumericFormulaValue)_value).getPreEvaluatedValue();
             }
@@ -345,17 +343,15 @@ public class SXSSFCell extends CellBase {
      * @see org.apache.poi.ss.usermodel.DataFormatter for formatting  this date into a string similar to how excel does.
      */
     @Override
-    public Date getDateCellValue()
-    {
+    public Date getDateCellValue() {
         CellType cellType = getCellType();
-        if (cellType == CellType.BLANK)
-        {
-            return null;
+        Date date = null;
+        if (cellType != CellType.BLANK) {
+           double value = getNumericCellValue();
+           boolean date1904 = getSheet().getWorkbook().isDate1904();
+           date = DateUtil.getJavaDate(value, date1904);
         }
-
-        double value = getNumericCellValue();
-        boolean date1904 = getSheet().getWorkbook().isDate1904();
-        return DateUtil.getJavaDate(value, date1904);
+        return date,
     }
 
     /**
@@ -370,13 +366,13 @@ public class SXSSFCell extends CellBase {
      */
     @Override
     public LocalDateTime getLocalDateTimeCellValue() {
-        if (getCellType() == CellType.BLANK) {
-            return null;
+        LocalDateTime localDateTime = null;
+        if (getCellType() != CellType.BLANK) {
+           double value = getNumericCellValue();
+           boolean date1904 = getSheet().getWorkbook().isDate1904();
+           localDateTime = DateUtil.getLocalDateTime(value, date1904);
         }
-
-        double value = getNumericCellValue();
-        boolean date1904 = getSheet().getWorkbook().isDate1904();
-        return DateUtil.getLocalDateTime(value, date1904);
+        return localDateTime;
     }
 
     /**
@@ -388,21 +384,20 @@ public class SXSSFCell extends CellBase {
      * @return the value of the cell as a XSSFRichTextString
      */
     @Override
-    public RichTextString getRichStringCellValue()
-    {
+    public RichTextString getRichStringCellValue() {
         CellType cellType = getCellType();
-        if(getCellType() != CellType.STRING)
+        RichTextString richTextString = ((RichTextValue)_value).getValue();
+        if(getCellType() != CellType.STRING) {
             throw typeMismatch(CellType.STRING, cellType, false);
-
+        }
         StringValue sval = (StringValue)_value;
-        if(sval.isRichText())
-            return ((RichTextValue)_value).getValue();
-        else {
+        if(!sval.isRichText()) {
             String plainText = getStringCellValue();
             // don't use the creation-helper here as it would spam the log with one line per row
             //return getSheet().getWorkbook().getCreationHelper().createRichTextString(plainText);
-            return new XSSFRichTextString(plainText);
+            richTextString = new XSSFRichTextString(plainText);
         }
+       return richTextString,
     }
 
 
@@ -415,18 +410,17 @@ public class SXSSFCell extends CellBase {
      * @return the value of the cell as a string
      */
     @Override
-    public String getStringCellValue()
-    {
+    public String getStringCellValue() {
         CellType cellType = getCellType();
-        switch(cellType)
-        {
+        switch(cellType) {
             case BLANK:
                 return "";
             case FORMULA:
             {
-                FormulaValue fv=(FormulaValue)_value;
-                if(fv.getFormulaType()!=CellType.STRING)
+                FormulaValue fv = (FormulaValue)_value;
+                if(fv.getFormulaType() != CellType.STRING) {
                       throw typeMismatch(CellType.STRING, CellType.FORMULA, false);
+                }
                 if(_value instanceof RichTextStringFormulaValue) {
                     return ((RichTextStringFormulaValue) _value).getPreEvaluatedValue().getString();
                 } else {
@@ -453,13 +447,13 @@ public class SXSSFCell extends CellBase {
      *        will change the cell to a boolean cell and set its value.
      */
     @Override
-    public void setCellValue(boolean value)
-    {
+    public void setCellValue(boolean value) {
         ensureTypeOrFormulaType(CellType.BOOLEAN);
-        if(_value.getType()==CellType.FORMULA)
+        if(_value.getType() == CellType.FORMULA) {
             ((BooleanFormulaValue)_value).setPreEvaluatedValue(value);
-        else
+        } else {
             ((BooleanValue)_value).setValue(value);
+        }
     }
 
     /**
@@ -474,7 +468,7 @@ public class SXSSFCell extends CellBase {
     @Override
     public void setCellErrorValue(byte value) {
         // for formulas, we want to keep the type and only have an ERROR as formula value
-        if(_value.getType()==CellType.FORMULA) {
+        if(_value.getType() == CellType.FORMULA) {
             _value = new ErrorFormulaValue(getCellFormula(), value);
         } else {
             _value = new ErrorValue(value);
@@ -491,17 +485,15 @@ public class SXSSFCell extends CellBase {
      *   is not CellType.BOOLEAN, CellType.BLANK or CellType.FORMULA
      */
     @Override
-    public boolean getBooleanCellValue()
-    {
+    public boolean getBooleanCellValue() {
         CellType cellType = getCellType();
-        switch(cellType)
-        {
+        switch(cellType) {
             case BLANK:
                 return false;
             case FORMULA:
             {
-                FormulaValue fv=(FormulaValue)_value;
-                if(fv.getFormulaType()!=CellType.BOOLEAN)
+                FormulaValue fv = (FormulaValue)_value;
+                if(fv.getFormulaType() != CellType.BOOLEAN)
                       throw typeMismatch(CellType.BOOLEAN, CellType.FORMULA, false);
                 return ((BooleanFormulaValue)_value).getPreEvaluatedValue();
             }
@@ -526,17 +518,15 @@ public class SXSSFCell extends CellBase {
      * @see org.apache.poi.ss.usermodel.FormulaError for error codes
      */
     @Override
-    public byte getErrorCellValue()
-    {
+    public byte getErrorCellValue() {
         CellType cellType = getCellType();
-        switch(cellType)
-        {
+        switch(cellType) {
             case BLANK:
                 return 0;
             case FORMULA:
             {
-                FormulaValue fv=(FormulaValue)_value;
-                if(fv.getFormulaType()!=CellType.ERROR)
+                FormulaValue fv = (FormulaValue)_value;
+                if(fv.getFormulaType() != CellType.ERROR)
                       throw typeMismatch(CellType.ERROR, CellType.FORMULA, false);
                 return ((ErrorFormulaValue)_value).getPreEvaluatedValue();
             }
@@ -561,9 +551,8 @@ public class SXSSFCell extends CellBase {
      * @see org.apache.poi.ss.usermodel.Workbook#createCellStyle
      */
     @Override
-    public void setCellStyle(CellStyle style)
-    {
-        _style=style;
+    public void setCellStyle(CellStyle style) {
+        _style = style;
     }
 
     /**
@@ -574,22 +563,20 @@ public class SXSSFCell extends CellBase {
      * @see org.apache.poi.ss.usermodel.Workbook#getCellStyleAt(int)
      */
     @Override
-    public CellStyle getCellStyle()
-    {
+    public CellStyle getCellStyle() {
+        CellStyle cellStyle = _style;
         if(_style == null){
             SXSSFWorkbook wb = (SXSSFWorkbook)getRow().getSheet().getWorkbook();
-            return wb.getCellStyleAt(0);
-        } else {
-            return _style;
+            cellStyle = wb.getCellStyleAt(0);
         }
+        return cellStyle;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setAsActiveCell()
-    {
+    public void setAsActiveCell() {
         getSheet().setActiveCell(getAddress());
     }
 
@@ -599,8 +586,7 @@ public class SXSSFCell extends CellBase {
      * @param comment comment associated with this cell
      */
     @Override
-    public void setCellComment(Comment comment)
-    {
+    public void setCellComment(Comment comment) {
         setProperty(Property.COMMENT,comment);
     }
 
@@ -610,8 +596,7 @@ public class SXSSFCell extends CellBase {
      * @return comment associated with this cell or <code>null</code> if not found
      */
     @Override
-    public Comment getCellComment()
-    {
+    public Comment getCellComment() {
         return (Comment)getPropertyValue(Property.COMMENT);
     }
 
@@ -619,8 +604,7 @@ public class SXSSFCell extends CellBase {
      * Removes the comment for this cell, if there is one.
      */
     @Override
-    public void removeCellComment()
-    {
+    public void removeCellComment() {
         removeProperty(Property.COMMENT);
     }
 
@@ -628,8 +612,7 @@ public class SXSSFCell extends CellBase {
      * @return hyperlink associated with this cell or <code>null</code> if not found
      */
     @Override
-    public Hyperlink getHyperlink()
-    {
+    public Hyperlink getHyperlink() {
         return (Hyperlink)getPropertyValue(Property.HYPERLINK);
     }
 
@@ -642,20 +625,19 @@ public class SXSSFCell extends CellBase {
     @Override
     public void setHyperlink(Hyperlink link)
     {
-        if (link == null) {
-            removeHyperlink();
-            return;
+        if (link != null) {        
+           setProperty(Property.HYPERLINK,link);
+
+           XSSFHyperlink xssfobj = (XSSFHyperlink)link;
+           // Assign to us
+           CellReference ref = new CellReference(getRowIndex(), getColumnIndex());
+           xssfobj.setCellReference( ref );
+
+           // Add to the lists
+           getSheet()._sh.addHyperlink(xssfobj);
+        } else {
+           removeHyperlink();
         }
-
-        setProperty(Property.HYPERLINK,link);
-
-        XSSFHyperlink xssfobj = (XSSFHyperlink)link;
-        // Assign to us
-        CellReference ref = new CellReference(getRowIndex(), getColumnIndex());
-        xssfobj.setCellReference( ref );
-
-        // Add to the lists
-        getSheet()._sh.addHyperlink(xssfobj);
     }
 
     /**
@@ -727,35 +709,31 @@ public class SXSSFCell extends CellBase {
 
     /*package*/ void removeProperty(int type)
     {
-        Property current=_firstProperty;
-        Property previous=null;
-        while(current!=null&&current.getType()!=type)
+        Property current = _firstProperty;
+        Property previous = null;
+        while(current != null && current.getType() != type)
         {
             previous=current;
             current=current._next;
         }
-        if(current!=null)
-        {
-            if(previous!=null)
-            {
+        if(current!=null) {
+            if(previous!=null) {
                 previous._next=current._next;
-            }
-            else
-            {
+            } else  {
                 _firstProperty=current._next;
             }
         }
     }
     /*package*/ void setProperty(int type,Object value)
     {
-        Property current=_firstProperty;
-        Property previous=null;
-        while(current!=null&&current.getType()!=type)
+        Property current = _firstProperty;
+        Property previous = null;
+        while(current!=null && current.getType()!=type)
         {
-            previous=current;
-            current=current._next;
+            previous = current;
+            current = current._next;
         }
-        if(current!=null)
+        if(current != null)
         {
             current.setValue(value);
         }
@@ -765,12 +743,12 @@ public class SXSSFCell extends CellBase {
             {
                 case Property.COMMENT:
                 {
-                    current=new CommentProperty(value);
+                    current = new CommentProperty(value);
                     break;
                 }
                 case Property.HYPERLINK:
                 {
-                    current=new HyperlinkProperty(value);
+                    current = new HyperlinkProperty(value);
                     break;
                 }
                 default:
@@ -778,64 +756,73 @@ public class SXSSFCell extends CellBase {
                     throw new IllegalArgumentException("Invalid type: " + type);
                 }
             }
-            if(previous!=null)
-            {
+            if(previous != null) {
                 previous._next=current;
-            }
-            else
-            {
+            } else {
                 _firstProperty=current;
             }
         }
     }
-    /*package*/ Object getPropertyValue(int type)
-    {
+   
+    /*package*/ Object getPropertyValue(int type) {
         return getPropertyValue(type,null);
     }
-    /*package*/ Object getPropertyValue(int type,String defaultValue)
-    {
-        Property current=_firstProperty;
-        while(current!=null&&current.getType()!=type) current=current._next;
-        return current==null?defaultValue:current.getValue();
+   
+    /*package*/ Object getPropertyValue(int type,String defaultValue) {
+        Property current = _firstProperty;
+        while(isNotTheSameType(type, current)) {
+           current = current._next;
+        }
+        return current == null ? defaultValue : current.getValue();
     }
-    /*package*/ void ensurePlainStringType()
-    {
-        if(_value.getType()!=CellType.STRING
-           ||((StringValue)_value).isRichText())
+   
+   /**
+    * Checks if current property is not null and it is not the same property type.
+    * @param type they type to check
+    * @param current the property with the type to check
+    */
+    private boolean isNotTheSameType(int type, Property current) {
+       return current != null && current.getType() != type;
+    }
+   
+    /*package*/ void ensurePlainStringType() {
+        if(_value.getType() != CellType.STRING || ((StringValue)_value).isRichText()) {
             _value = new PlainStringValue();
+        }
     }
+   
     /*package*/ void ensureRichTextStringType()
     {
         // don't change cell type for formulas
         if(_value.getType() == CellType.FORMULA) {
             String formula = ((FormulaValue)_value).getValue();
             _value = new RichTextStringFormulaValue(formula, new XSSFRichTextString(""));
-        } else if(_value.getType()!=CellType.STRING ||
+        } else if(_value.getType() != CellType.STRING ||
                 !((StringValue)_value).isRichText()) {
             _value = new RichTextValue();
         }
     }
-    /*package*/ void ensureType(CellType type)
-    {
-        if(_value.getType()!=type)
+   
+    /*package*/ void ensureType(CellType type) {
+        if(_value.getType() != type) {
             setType(type);
+        }
     }
 
     /*
      * Sets the cell type to type if it is different
      */
-    /*package*/ void ensureTypeOrFormulaType(CellType type)
-    {
-        if(_value.getType()==type)
-        {
-            if(type==CellType.STRING&&((StringValue)_value).isRichText())
+    /*package*/ void ensureTypeOrFormulaType(CellType type) {
+        if(_value.getType() == type) {
+            if(type == CellType.STRING && ((StringValue)_value).isRichText()) {
                 setType(CellType.STRING);
+            }
             return;
         }
-        if(_value.getType()==CellType.FORMULA)
-        {
-            if(((FormulaValue)_value).getFormulaType()==type)
+        if(_value.getType() == CellType.FORMULA) {
+            if(((FormulaValue)_value).getFormulaType() == type) {
                 return;
+            }
             switch (type) {
                 case BOOLEAN:
                     _value = new BooleanFormulaValue(getCellFormula(), false);
@@ -856,17 +843,16 @@ public class SXSSFCell extends CellBase {
         }
         setType(type);
     }
+   
     /**
-     * changes the cell type to the specified type, and resets the value to the default value for that type
+     * Changes the cell type to the specified type, and resets the value to the default value for that type.
      * If cell type is the same as specified type, this will reset the value to the default value for that type
      *
      * @param type the cell type to set
      * @throws IllegalArgumentException if type is not a recognized type
      */
-    /*package*/ void setType(CellType type)
-    {
-        switch(type)
-        {
+    /*package*/ void setType(CellType type) {
+        switch(type) {
             case NUMERIC:
             {
                 _value = new NumericValue();
@@ -875,7 +861,7 @@ public class SXSSFCell extends CellBase {
             case STRING:
             {
                 PlainStringValue sval = new PlainStringValue();
-                if(_value != null){
+                if(_value != null) {
                     // if a cell is not blank then convert the old value to string
                     String str = convertCellValueToString();
                     sval.setValue(str);
@@ -898,7 +884,7 @@ public class SXSSFCell extends CellBase {
             case BOOLEAN:
             {
                 BooleanValue bval = new BooleanValue();
-                if(_value != null){
+                if(_value != null) {
                     // if a cell is not blank then convert the old value to string
                     boolean val = convertCellValueToBoolean();
                     bval.setValue(val);
@@ -986,52 +972,44 @@ public class SXSSFCell extends CellBase {
 
     static abstract class Property
     {
-        static final int COMMENT=1;
-        static final int HYPERLINK=2;
+        static final int COMMENT = 1;
+        static final int HYPERLINK = 2;
         Object _value;
         Property _next;
-        public Property(Object value)
-        {
+        public Property(Object value) {
             _value = value;
         }
         abstract int getType();
-        void setValue(Object value)
-        {
+        void setValue(Object value) {
             _value = value;
         }
-        Object getValue()
-        {
+        Object getValue() {
             return _value;
         }
     }
-    static class CommentProperty extends Property
-    {
-        public CommentProperty(Object value)
-        {
+    static class CommentProperty extends Property {
+        public CommentProperty(Object value) {
             super(value);
         }
         @Override
-        public int getType()
-        {
+        public int getType() {
             return COMMENT;
         }
     }
-    static class HyperlinkProperty extends Property
-    {
-        public HyperlinkProperty(Object value)
-        {
+    static class HyperlinkProperty extends Property {
+        public HyperlinkProperty(Object value) {
             super(value);
         }
         @Override
-        public int getType()
-        {
+        public int getType() {
             return HYPERLINK;
         }
     }
-    interface Value
-    {
+   
+    interface Value {
         CellType getType();
     }
+   
     static class NumericValue implements Value {
         double _value;
 
@@ -1043,21 +1021,19 @@ public class SXSSFCell extends CellBase {
             this._value = _value;
         }
 
-        public CellType getType()
-        {
+        public CellType getType() {
             return CellType.NUMERIC;
         }
-        void setValue(double value)
-        {
+       
+        void setValue(double value) {
             _value = value;
         }
-        double getValue()
-        {
+       
+        double getValue() {
             return _value;
         }
     }
-    static abstract class StringValue implements Value
-    {
+    static abstract class StringValue implements Value {
         public CellType getType()
         {
             return CellType.STRING;
@@ -1068,60 +1044,48 @@ public class SXSSFCell extends CellBase {
     static class PlainStringValue extends StringValue
     {
         String _value;
-        void setValue(String value)
-        {
+        void setValue(String value) {
             _value = value;
         }
-        String getValue()
-        {
+        String getValue() {
             return _value;
         }
         @Override
-        boolean isRichText()
-        {
+        boolean isRichText() {
             return false;
         }
     }
-    static class RichTextValue extends StringValue
-    {
+    static class RichTextValue extends StringValue {
         RichTextString _value;
         @Override
-        public CellType getType()
-        {
+        public CellType getType() {
             return CellType.STRING;
         }
-        void setValue(RichTextString value)
-        {
+        void setValue(RichTextString value) {
             _value = value;
         }
-        RichTextString getValue()
-        {
+        RichTextString getValue() {
             return _value;
         }
         @Override
-        boolean isRichText()
-        {
+        boolean isRichText() {
             return true;
         }
     }
-    static abstract class FormulaValue implements Value
-    {
+    static abstract class FormulaValue implements Value {
         String _value;
 
         public FormulaValue(String _value) {
             this._value = _value;
         }
 
-        public CellType getType()
-        {
+        public CellType getType() {
             return CellType.FORMULA;
         }
-        void setValue(String value)
-        {
+        void setValue(String value) {
             _value = value;
         }
-        String getValue()
-        {
+        String getValue() {
             return _value;
         }
         abstract CellType getFormulaType();
@@ -1135,16 +1099,13 @@ public class SXSSFCell extends CellBase {
         }
 
         @Override
-        CellType getFormulaType()
-        {
+        CellType getFormulaType() {
             return CellType.NUMERIC;
         }
-        void setPreEvaluatedValue(double value)
-        {
+        void setPreEvaluatedValue(double value) {
             _preEvaluatedValue=value;
         }
-        double getPreEvaluatedValue()
-        {
+        double getPreEvaluatedValue() {
             return _preEvaluatedValue;
         }
     }
@@ -1157,16 +1118,13 @@ public class SXSSFCell extends CellBase {
         }
 
         @Override
-        CellType getFormulaType()
-        {
+        CellType getFormulaType() {
             return CellType.STRING;
         }
-        void setPreEvaluatedValue(String value)
-        {
+        void setPreEvaluatedValue(String value) {
             _preEvaluatedValue=value;
         }
-        String getPreEvaluatedValue()
-        {
+        String getPreEvaluatedValue() {
             return _preEvaluatedValue;
         }
     }
@@ -1180,16 +1138,14 @@ public class SXSSFCell extends CellBase {
         }
 
         @Override
-        CellType getFormulaType()
-        {
+        CellType getFormulaType() {
             return CellType.STRING;
         }
         void setPreEvaluatedValue(RichTextString value)
         {
             _preEvaluatedValue=value;
         }
-        RichTextString getPreEvaluatedValue()
-        {
+        RichTextString getPreEvaluatedValue() {
             return _preEvaluatedValue;
         }
     }
@@ -1203,16 +1159,13 @@ public class SXSSFCell extends CellBase {
         }
 
         @Override
-        CellType getFormulaType()
-        {
+        CellType getFormulaType() {
             return CellType.BOOLEAN;
         }
-        void setPreEvaluatedValue(boolean value)
-        {
+        void setPreEvaluatedValue(boolean value) {
             _preEvaluatedValue=value;
         }
-        boolean getPreEvaluatedValue()
-        {
+        boolean getPreEvaluatedValue() {
             return _preEvaluatedValue;
         }
     }
@@ -1226,16 +1179,13 @@ public class SXSSFCell extends CellBase {
         }
 
         @Override
-        CellType getFormulaType()
-        {
+        CellType getFormulaType() {
             return CellType.ERROR;
         }
-        void setPreEvaluatedValue(byte value)
-        {
-            _preEvaluatedValue=value;
+        void setPreEvaluatedValue(byte value) {
+            _preEvaluatedValue = value;
         }
-        byte getPreEvaluatedValue()
-        {
+        byte getPreEvaluatedValue() {
             return _preEvaluatedValue;
         }
     }
@@ -1258,21 +1208,18 @@ public class SXSSFCell extends CellBase {
             this._value = _value;
         }
 
-        public CellType getType()
-        {
+        public CellType getType() {
             return CellType.BOOLEAN;
         }
-        void setValue(boolean value)
-        {
+        void setValue(boolean value) {
             _value = value;
         }
-        boolean getValue()
-        {
+        boolean getValue() {
             return _value;
         }
     }
-    static class ErrorValue implements Value
-    {
+   
+    static class ErrorValue implements Value {
         byte _value;
 
         public ErrorValue() {
@@ -1283,16 +1230,13 @@ public class SXSSFCell extends CellBase {
             this._value = _value;
         }
 
-        public CellType getType()
-        {
+        public CellType getType() {
             return CellType.ERROR;
         }
-        void setValue(byte value)
-        {
+        void setValue(byte value) {
             _value = value;
         }
-        byte getValue()
-        {
+        byte getValue() {
             return _value;
         }
     }
