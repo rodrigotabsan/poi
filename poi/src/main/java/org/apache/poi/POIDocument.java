@@ -201,7 +201,7 @@ public abstract class POIDocument implements Closeable {
     @SuppressWarnings("WeakerAccess")
     protected PropertySet getPropertySet(String setName, EncryptionInfo encryptionInfo) throws IOException {
         DirectoryNode dirNode = directory;
-
+        PropertySet propertySet = null;
         POIFSFileSystem encPoifs = null;
         String step = "getting";
         try {
@@ -217,16 +217,14 @@ public abstract class POIDocument implements Closeable {
             }
 
             //directory can be null when creating new documents
-            if (dirNode == null || !dirNode.hasEntry(setName)) {
-                return null;
-            }
-
-            // Find the entry, and get an input stream for it
-            step = "getting";
-            try (DocumentInputStream dis = dirNode.createDocumentInputStream(dirNode.getEntry(setName))) {
-                // Create the Property Set
-                step = "creating";
-                return PropertySetFactory.create(dis);
+            if (dirNode != null && dirNode.hasEntry(setName)) {
+               // Find the entry, and get an input stream for it
+               step = "getting";
+               try (DocumentInputStream dis = dirNode.createDocumentInputStream(dirNode.getEntry(setName))) {
+                   // Create the Property Set
+                   step = "creating";
+                   propertySet = PropertySetFactory.create(dis);
+               }
             }
         } catch (IOException e) {
             throw e;
@@ -235,6 +233,7 @@ public abstract class POIDocument implements Closeable {
         } finally {
             IOUtils.closeQuietly(encPoifs);
         }
+       return propertySet;
     }
 
     /**
@@ -462,12 +461,7 @@ public abstract class POIDocument implements Closeable {
      */
     @Internal
     protected void replaceDirectory(DirectoryNode newDirectory) throws IOException {
-        if (
-                // do not close if it is actually the same directory or
-                newDirectory == directory ||
-
-                // also for different directories, but same FileSystem
-                (newDirectory != null && directory != null && newDirectory.getFileSystem() == directory.getFileSystem())) {
+        if (isSameDirectory(newDirectory) || isSameFileSystem(newDirectory)) {
             return;
         }
 
@@ -478,6 +472,22 @@ public abstract class POIDocument implements Closeable {
 
         directory = newDirectory;
     }
+   
+   /**
+    * Check if it is the same directory
+    * @param newDirectory the new directory
+    */
+   private boolean isSameDirectory(DirectoryNode newDirectory) {
+      return newDirectory == directory;
+   }
+   
+   /**
+    * Check if it is the same file system
+    * @param newDirectory the new directory
+    */
+   private boolean isSameFileSystem(DirectoryNode newDirectory) {
+      return newDirectory != null && directory != null && newDirectory.getFileSystem() == directory.getFileSystem();
+   }
 
     /**
      * @return the stream name of the property set collection, if the document is encrypted
