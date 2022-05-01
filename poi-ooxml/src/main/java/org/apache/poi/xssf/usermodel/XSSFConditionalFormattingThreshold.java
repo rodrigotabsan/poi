@@ -67,7 +67,7 @@ public class XSSFConditionalFormattingThreshold implements org.apache.poi.ss.use
             cfvo.getType() == STCfvoType.MIN ||
             cfvo.getType() == STCfvoType.MAX;
         if (!isTypeEqualsToTypeFormulaMinOrMax && cfvo.isSetVal()) {
-            value Double.parseDouble(cfvo.getVal());
+            value = Double.parseDouble(cfvo.getVal());
         }
         return value;
     }
