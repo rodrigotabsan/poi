@@ -26,41 +26,44 @@ public class NumericRanges {
     public static final int OVERLAPS_2_WRAPS = 3;
     
     public static long[] getOverlappingRange(long[] range1, long[] range2) {
+       long[] overlappingRange = 
         switch(getOverlappingType(range1, range2)) {
             case OVERLAPS_1_MINOR:
-                return new long[]{range2[0], range1[1]};
+                overlappingRange = new long[]{range2[0], range1[1]};
+                break;
             case OVERLAPS_2_MINOR:
-                return new long[]{range1[0], range2[1]};
+                overlappingRange = new long[]{range1[0], range2[1]};
+                break;
             case OVERLAPS_2_WRAPS:
-                return range1;
+                overlappingRange range1;
+                break;
             case OVERLAPS_1_WRAPS:
-                return range2;
+                overlappingRange = range2;
+                break;
             default:
             case NO_OVERLAPS:
-                return new long[]{-1, -1};
+                overlappingRange = new long[]{-1, -1};
+                break;
         }
+       return overlappingRange;
     }
-    
+   
     public static int getOverlappingType(long[] range1, long[] range2) {
+        int overlappingType = NO_OVERLAPS;
         long min1 = range1[0];
         long max1 = range1[1];
         long min2 = range2[0];
         long max2 = range2[1];
-        if (min1 >= min2) {
-            if (max1 <= max2) {
-                return OVERLAPS_2_WRAPS;
-            } else if (min1 <= max2) {
-                return OVERLAPS_2_MINOR;
-            }
-        } else {
-            if (max1 >= max2) {
-                return OVERLAPS_1_WRAPS;
-            } else if (max1 >= min2) {
-                return OVERLAPS_1_MINOR;
-            }
+        if (min1 >= min2 && max1 <= max2) {
+            overlappingType = OVERLAPS_2_WRAPS;
+        } else if (min1 >= min2 && min1 <= max2) {
+            overlappingType = OVERLAPS_2_MINOR;
+        } else if (max1 >= max2) {
+            overlappingType = OVERLAPS_1_WRAPS;
+        } else if (max1 >= min2) {
+            overlappingType = OVERLAPS_1_MINOR;
         }
-        return NO_OVERLAPS;
-        
+        return overlappingType;        
     }
     
 }
