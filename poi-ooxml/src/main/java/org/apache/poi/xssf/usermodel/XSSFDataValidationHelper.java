@@ -72,14 +72,15 @@ public class XSSFDataValidationHelper implements DataValidationHelper {
 
 
     public DataValidationConstraint createNumericConstraint(int validationType, int operatorType, String formula1, String formula2) {
-        if( validationType==ValidationType.INTEGER) {
-            return createIntegerConstraint(operatorType, formula1, formula2);
-        } else if ( validationType==ValidationType.DECIMAL) {
-            return createDecimalConstraint(operatorType, formula1, formula2);
-        } else if ( validationType==ValidationType.TEXT_LENGTH) {
-            return createTextLengthConstraint(operatorType, formula1, formula2);
+        DataValidationConstraint dataValidationConstraint = null;
+        if( validationType == ValidationType.INTEGER) {
+            dataValidationConstraint = createIntegerConstraint(operatorType, formula1, formula2);
+        } else if ( validationType == ValidationType.DECIMAL) {
+            dataValidationConstraint = createDecimalConstraint(operatorType, formula1, formula2);
+        } else if ( validationType == ValidationType.TEXT_LENGTH) {
+            dataValidationConstraint = createTextLengthConstraint(operatorType, formula1, formula2);
         }
-        return null;
+        return dataValidationConstraint;
     }
 
     /* (non-Javadoc)
@@ -160,8 +161,7 @@ public class XSSFDataValidationHelper implements DataValidationHelper {
 
         CellRangeAddress[] cellRangeAddresses = cellRangeAddressList.getCellRangeAddresses();
         List<String> sqref = new ArrayList<>();
-        for (int i = 0; i < cellRangeAddresses.length; i++) {
-            CellRangeAddress cellRangeAddress = cellRangeAddresses[i];
+        for (CellRangeAddress cellRangeAddress : cellRangeAddresses) {            
             sqref.add(cellRangeAddress.formatAsString());
         }
         newDataValidation.setSqref(sqref);
