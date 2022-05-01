@@ -187,12 +187,11 @@ public class XSSFColor extends ExtendedColor {
    @Override
    public byte[] getRGB() {
       byte[] rgb = getRGBOrARGB();
-      if(rgb == null) {
-          return null;
+      if(rgb != null) {
+         byte[] rgbTrimOffAlpha = Arrays.copyOfRange(rgb, 1, 4);
+         rgb = rgb.length == 4 ? rgbTrimOffAlpha : rgb;
       }
-
-       // Need to trim off the alpha
-       return rgb.length == 4 ? Arrays.copyOfRange(rgb, 1, 4) : rgb;
+      return rgb;
    }
 
    /**
@@ -200,20 +199,15 @@ public class XSSFColor extends ExtendedColor {
     */
    @Override
    public byte[] getARGB() {
-      byte[] rgb = getRGBOrARGB();
-      if(rgb == null) {
-          return null;
-      }
-
-      if(rgb.length == 3) {
+      byte[] rgb = getRGBOrARGB();      
+      if(rgb != null && rgb.length == 3) {
          // Pad with the default Alpha
          byte[] tmp = new byte[4];
          tmp[0] = -1;
          System.arraycopy(rgb, 0, tmp, 1, 3);
-         return tmp;
-      } else {
-         return rgb;
+         rgb = tmp;
       }
+      return rgb;      
    }
 
    @Override
@@ -223,11 +217,14 @@ public class XSSFColor extends ExtendedColor {
 
    @Override
    protected byte[] getIndexedRGB() {
-       if (isIndexed()) {
-           if (indexedColorMap != null) return indexedColorMap.getRGB(getIndex());
-           return DefaultIndexedColorMap.getDefaultRGB(getIndex());
+       byte[] indexedRGB = null;
+       boolean isIndexed = isIndexed();
+       if (isIndexed && indexedColorMap != null){ 
+          indexedRGB = indexedColorMap.getRGB(getIndex());                   
+       } else if(isIndexed){
+          indexedRGB = DefaultIndexedColorMap.getDefaultRGB(getIndex());  
        }
-       return null;
+       return indexedRGB;
    }
 
     /**
@@ -382,28 +379,33 @@ public class XSSFColor extends ExtendedColor {
 
     // Helper methods for {@link #equals(Object)}
     private boolean sameIndexed(XSSFColor other) {
-        if (isIndexed() == other.isIndexed()) {
-            return !isIndexed() || getIndexed() == other.getIndexed();
+        boolean isIndexedEqualsToOtherIndexed = isIndexed() == other.isIndexed();
+        boolean areSameIndexed = false;
+        if (isIndexedEqualsToOtherIndexed) {
+            areSameIndexed = !isIndexed() || getIndexed() == other.getIndexed();
         }
-        return false;
+        return areSameIndexed;
     }
     private boolean sameARGB(XSSFColor other) {
+        boolean isTheSameARGB = false;
         if (isRGB() == other.isRGB()) {
-            return !isRGB() || Arrays.equals(getARGB(), other.getARGB());
+            isTheSameARGB = !isRGB() || Arrays.equals(getARGB(), other.getARGB());
         }
-        return false;
+        return isTheSameARGB;
     }
     private boolean sameTheme(XSSFColor other) {
+        boolean isTheSameTheme = false;
         if (isThemed() == other.isThemed()) {
-            return !isThemed() || getTheme() == other.getTheme();
+            isTheSameTheme = !isThemed() || getTheme() == other.getTheme();
         }
-        return false;
+        return isTheSameTheme;
     }
     private boolean sameTint(XSSFColor other) {
+        boolean isTheSameTint = false;
         if (hasTint() == other.hasTint()) {
-            return !hasTint() || getTint() == other.getTint();
+            isTheSameTint = !hasTint() || getTint() == other.getTint();
         }
-        return false;
+        return isTheSameTint;
     }
     private boolean sameAuto(XSSFColor other) {
         return isAuto() == other.isAuto();
@@ -411,19 +413,18 @@ public class XSSFColor extends ExtendedColor {
 
     @Override
     public boolean equals(Object o){
-        if(!(o instanceof XSSFColor)) {
-            return false;
-        }
-
-        XSSFColor other = (XSSFColor)o;
-
-        // Compare each field in ctColor.
-        // Cannot compare ctColor's XML string representation because equivalent
-        // colors may have different relation namespace URI's
-        return sameARGB(other)
+        boolean isEquals = !(o instanceof XSSFColor);
+        if(isEquals) {
+         XSSFColor other = (XSSFColor)o;
+         // Compare each field in ctColor.
+         // Cannot compare ctColor's XML string representation because equivalent
+         // colors may have different relation namespace URI's  
+         isEquals = sameARGB(other)
                 && sameTheme(other)
                 && sameIndexed(other)
                 && sameTint(other)
                 && sameAuto(other);
+        }
+        return isEquals;
     }
 }
